@@ -43,51 +43,39 @@ async def test_list_after_create(client):
     titles = [t["title"] for t in response.json()]
     assert titles == ["task1", "task2"]
 
-async def test_get_by_id(client):
-    created = await client.post("/tasks", json={"title": "single"})
-    task_id = created.json()["id"]
-
-    response = await client.get(f"/tasks/{task_id}")
+async def test_get_by_id(client, sample_task):
+    response = await client.get(f"/tasks/{sample_task}")
     assert response.status_code == 200
-    assert response.json()["title"] == "single"
+    assert response.json()["title"] == "sample task"
 
 async def test_get_not_found(client):
     response = await  client.get("/tasks/999")
     assert response.status_code == 404
     assert response.json() == {"detail": "Task not found"}
 
-async def test_update_toggle_done(client):
-    created = await client.post("/tasks", json={"title": "do it"})
-    task_id = created.json()["id"]
-
-    response = await client.patch(f"/tasks/{task_id}", json={"done": True})
+async def test_update_toggle_done(client, sample_task):
+    response = await client.patch(f"/tasks/{sample_task}", json={"done": True})
     assert  response.status_code == 200
     assert response.json()["done"] is True
     # Остальные поля не тронуты
-    assert response.json()["title"] == "do it"
+    assert response.json()["title"] == "sample task"
 
-async def test_update_title_only(client):
-    created = await client.post("/tasks", json={"title": "old", "description": "keep"})
-    task_id = created.json()["id"]
-
-    response = await client.patch(f"/tasks/{task_id}", json={"title": "new"})
+async def test_update_title_only(client, sample_task):
+    response = await client.patch(f"/tasks/{sample_task}", json={"title": "new"})
     assert response.status_code == 200
     body = response.json()
     assert body["title"] == "new"
-    assert body["description"] == "keep"
+    assert body["description"] == "sample description"
 
 async def test_update_not_found(client):
     response = await client.patch("/tasks/999", json={"done": True})
     assert response.status_code == 404
 
-async def test_delete_task(client):
-    created = await client.post("/tasks", json={"title": "to delete"})
-    task_id = created.json()["id"]
-
-    response = await client.delete(f"tasks/{task_id}")
+async def test_delete_task(client, sample_task):
+    response = await client.delete(f"/tasks/{sample_task}")
     assert response.status_code == 204
 
-    check = await client.get(f"/tasks/{task_id}")
+    check = await client.get(f"/tasks/{sample_task}")
     assert check.status_code == 404
 
 async def test_delete_not_found(client):
