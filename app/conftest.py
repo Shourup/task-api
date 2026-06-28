@@ -12,3 +12,12 @@ async def client():
         base_url="http://test",
     ) as c:
         yield c
+
+@pytest_asyncio.fixture
+async def sample_task(client):
+    response = await client.post(
+        "/tasks",
+        json={"title": "sample task", "description": "sample description"}
+    )
+    assert response.status_code == 200
+    return response.json()["id"]
