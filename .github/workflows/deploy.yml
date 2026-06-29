@@ -4,14 +4,17 @@ on:
   push:
     branches: [main]
 
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/task-api
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Prepare image name
+        id: image
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/task-api" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -26,8 +29,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.IMAGE }}:${{ github.sha }}
-            ${{ env.IMAGE }}:latest
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
 
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
@@ -37,12 +40,12 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ${{ env.IMAGE }}:latest
+            docker pull ${{ steps.image.outputs.name }}:latest
             docker rm -f task-api 2>/dev/null || true
             docker run -d \
               --name task-api \
               --restart unless-stopped \
               -p 80:8000 \
               -e LOG_LEVEL=INFO \
-              ${{ env.IMAGE }}:latest
+              ${{ steps.image.outputs.name }}:latest
             docker logout ghcr.io
