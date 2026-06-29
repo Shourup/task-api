@@ -10,3 +10,7 @@ CRUD-сервис для управления задачами. FastAPI + Docker
     uvicorn app.main:app --reload
 
 Документация: http://localhost:8000/docs
+
+## Живой сервис
+
+Документация и swagger: https://89-108-71-249.nip.io/docs
